@@ -1,65 +1,118 @@
-import Image from "next/image";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, PackageCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DataTable } from "@/components/shared/data-table";
+import { PageShell } from "@/components/layout/page-shell";
+import { dashboardStats, products, stockMovements } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/utils";
+import type { ProductStatus } from "@/types/product";
+import type { StockMovementType } from "@/types/stock";
 
-export default function Home() {
+function productTone(status: ProductStatus) {
+  if (status === "In Stock") return "green";
+  if (status === "Low Stock") return "amber";
+  return "red";
+}
+
+function movementTone(type: StockMovementType) {
+  if (type === "Stock In") return "green";
+  if (type === "Stock Out") return "blue";
+  return "amber";
+}
+
+export default function DashboardPage() {
+  const lowStockProducts = products.filter((product) => product.status !== "In Stock");
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <PageShell
+      title="Dashboard"
+      description="Monitor stock health, urgent replenishments, and recent warehouse activity."
+      actions={
+        <>
+          <Button variant="secondary">
+            <ArrowDownRight aria-hidden="true" className="size-4" />
+            Stock out
+          </Button>
+          <Button>
+            <ArrowUpRight aria-hidden="true" className="size-4" />
+            Stock in
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {dashboardStats.map((stat) => (
+          <Card key={stat.label}>
+            <CardContent className="p-4">
+              <p className="text-sm text-zinc-500">{stat.label}</p>
+              <div className="mt-3 flex items-end justify-between gap-3">
+                <p className="text-2xl font-semibold text-zinc-950">{stat.value}</p>
+                <span className="text-xs font-medium text-zinc-500">{stat.delta}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_380px]">
+        <Card>
+          <CardHeader>
+            <div>
+              <h2 className="text-base font-semibold text-zinc-950">Priority Stock</h2>
+              <p className="mt-1 text-sm text-zinc-500">Items requiring reorder or review.</p>
+            </div>
+            <Button variant="ghost">View all</Button>
+          </CardHeader>
+          <CardContent>
+            <DataTable
+              headers={["Product", "SKU", "Qty", "Reorder", "Value", "Status"]}
+              rows={lowStockProducts.map((product) => [
+                <span key="name" className="font-medium text-zinc-950">
+                  {product.name}
+                </span>,
+                product.sku,
+                product.quantity,
+                product.reorderLevel,
+                formatCurrency(product.price * product.quantity),
+                <Badge key="status" tone={productTone(product.status)}>
+                  {product.status}
+                </Badge>,
+              ])}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <h2 className="text-base font-semibold text-zinc-950">Recent Movements</h2>
+              <p className="mt-1 text-sm text-zinc-500">Latest stock activity.</p>
+            </div>
+            <PackageCheck aria-hidden="true" className="size-5 text-zinc-400" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {stockMovements.slice(0, 4).map((movement) => (
+              <div key={movement.id} className="flex gap-3">
+                <div className="mt-1 grid size-9 shrink-0 place-items-center rounded-md bg-zinc-100">
+                  <AlertTriangle aria-hidden="true" className="size-4 text-zinc-500" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-medium text-zinc-950">
+                      {movement.product}
+                    </p>
+                    <Badge tone={movementTone(movement.type)}>{movement.type}</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {movement.quantity} units by {movement.actor}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </PageShell>
   );
 }
