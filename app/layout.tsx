@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Stockwise Inventory",
+  title: "Stockmoto Inventory",
   description: "UI-first inventory management dashboard",
 };
 

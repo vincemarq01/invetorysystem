@@ -18,7 +18,9 @@ export function AppSidebar() {
               <Boxes aria-hidden="true" className="size-5" />
             </span>
             <span>
-              <span className="block text-sm font-semibold text-zinc-950">Stockwise</span>
+              <span className="block text-sm font-semibold text-zinc-950">
+                Stockmoto
+              </span>
               <span className="block text-xs text-zinc-500">Inventory</span>
             </span>
           </Link>
@@ -34,7 +36,9 @@ export function AppSidebar() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
-              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
 
             return (
               <Link
@@ -59,7 +63,9 @@ export function AppSidebar() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href);
 
           return (
             <Link

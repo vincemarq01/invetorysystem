@@ -4,8 +4,8 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 
 type PageShellProps = {
   children: ReactNode;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   actions?: ReactNode;
 };
 
@@ -26,9 +26,13 @@ export function PageShell({
               <h1 className="text-2xl font-semibold tracking-normal text-zinc-950">
                 {title}
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-zinc-500">{description}</p>
+              <p className="mt-1 max-w-2xl text-sm text-zinc-500">
+                {description}
+              </p>
             </div>
-            {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+            {actions ? (
+              <div className="flex flex-wrap gap-2">{actions}</div>
+            ) : null}
           </div>
           {children}
         </main>
