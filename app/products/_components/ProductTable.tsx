@@ -1,3 +1,4 @@
+import { useDeferredValue, useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { SearchField } from "@/components/shared/search-field";
 import { quickFilters } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 import type { ProductRow } from "./product-types";
+
+type ProductFilter = (typeof quickFilters)[number];
 
 type ProductTableProps = {
   deletingId: string | null;
@@ -37,15 +40,54 @@ export function ProductTable({
   onEditProduct,
   products,
 }: ProductTableProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ProductFilter>("All");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const normalizedSearchQuery = deferredSearchQuery.trim().toLowerCase();
+
+  const searchFilteredProducts = normalizedSearchQuery
+    ? products.filter((product) => {
+        const searchValues = [
+          product.name,
+          product.sku,
+          product.model,
+          product.category?.name,
+          product.brandId,
+          product.supplierId,
+          product.location,
+        ];
+
+        return searchValues.some((value) =>
+          value?.toLowerCase().includes(normalizedSearchQuery),
+        );
+      })
+    : products;
+
+  const filteredProducts = searchFilteredProducts.filter((product) => {
+    const status = getProductStatus(product);
+
+    if (activeFilter === "All") {
+      return true;
+    }
+
+    return status.label === activeFilter;
+  });
+
   return (
     <Card>
       <CardHeader className="flex-col items-stretch sm:flex-row sm:items-center">
-        <SearchField placeholder="Search products or SKU" />
+        <SearchField
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search products or SKU"
+          value={searchQuery}
+        />
         <div className="flex flex-wrap gap-2">
           {quickFilters.map((filter) => (
             <Button
               key={filter}
-              variant={filter === "All" ? "primary" : "secondary"}
+              onClick={() => setActiveFilter(filter)}
+              type="button"
+              variant={filter === activeFilter ? "primary" : "secondary"}
             >
               {filter}
             </Button>
@@ -71,8 +113,14 @@ export function ProductTable({
             "Status",
             "",
           ]}
-          emptyLabel={isLoading ? "Loading products..." : "No products found."}
-          rows={products.map((product) => {
+          emptyLabel={
+            isLoading
+              ? "Loading products..."
+              : normalizedSearchQuery || activeFilter !== "All"
+                ? "No products match your search."
+                : "No products found."
+          }
+          rows={filteredProducts.map((product) => {
             const status = getProductStatus(product);
 
             return [
