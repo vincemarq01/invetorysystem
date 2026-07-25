@@ -3,27 +3,25 @@ import { Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type {
+  CategoryOption,
+  ProductActionState,
+} from "@/lib/products/types";
 import type { CreateProductInput } from "@/lib/validations/product";
-import type { ProductRequestState } from "./product-types";
 
 type ProductFormProps = {
-  categories: Array<{
-    id: string;
-    name: string;
-  }>;
-  categoryError: string;
+  categories: CategoryOption[];
   editingProductId: string | null;
   errors: FieldErrors<CreateProductInput>;
   isSubmitting: boolean;
   onCancel: () => void;
   onSubmit: () => Promise<void>;
   register: UseFormRegister<CreateProductInput>;
-  requestState: ProductRequestState;
+  requestState: ProductActionState;
 };
 
 export function ProductForm({
   categories,
-  categoryError,
   editingProductId,
   errors,
   isSubmitting,
@@ -84,9 +82,6 @@ export function ProductForm({
               <p className="text-xs text-red-600">
                 {errors.categoryId.message}
               </p>
-            ) : null}
-            {categoryError ? (
-              <p className="text-xs text-red-600">{categoryError}</p>
             ) : null}
           </label>
 
