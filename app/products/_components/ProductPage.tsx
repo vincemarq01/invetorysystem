@@ -1,33 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import {
+  createProductAction,
+  deleteProductAction,
+  updateProductAction,
+} from "../actions";
 import { ProductForm } from "./ProductForm";
 import { ProductTable } from "./ProductTable";
 import { ProductToolbar } from "./ProductToolbar";
-import type { ProductRequestState, ProductRow } from "./product-types";
+import type {
+  CategoryOption,
+  ProductActionState,
+  ProductRow,
+} from "@/lib/products/types";
 import {
   createProductSchema,
   type CreateProductInput,
 } from "@/lib/validations/product";
 
-type ProductsResponse = {
-  products?: ProductRow[];
-  message?: string;
+type ProductPageProps = {
+  categories: CategoryOption[];
+  products: ProductRow[];
 };
 
-type CategoryOption = {
-  id: string;
-  name: string;
-};
-
-type CategoriesResponse = {
-  categories?: CategoryOption[];
-  message?: string;
-};
-
-const initialProductRequestState: ProductRequestState = {
+const initialProductActionState: ProductActionState = {
   ok: false,
   message: "",
 };
@@ -48,17 +47,13 @@ const emptyProductForm: CreateProductInput = {
   description: "",
 };
 
-export function ProductPage() {
-  const [products, setProducts] = useState<ProductRow[]>([]);
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
+export function ProductPage({ categories, products }: ProductPageProps) {
   const [error, setError] = useState("");
-  const [categoryError, setCategoryError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [requestState, setRequestState] = useState<ProductRequestState>(
-    initialProductRequestState,
+  const [requestState, setRequestState] = useState<ProductActionState>(
+    initialProductActionState,
   );
 
   const {
@@ -77,87 +72,25 @@ export function ProductPage() {
   }
 
   function startAddingProduct() {
-    setRequestState(initialProductRequestState);
+    setRequestState(initialProductActionState);
     clearProductForm();
     setIsFormOpen(true);
   }
 
-  async function loadProducts() {
-    try {
-      const response = await fetch("/api/products", { cache: "no-store" });
-      const result = (await response.json()) as ProductsResponse;
-
-      if (!response.ok) {
-        throw new Error(result.message ?? "Unable to fetch products.");
-      }
-
-      setProducts(result.products ?? []);
-      setError("");
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Unable to fetch products.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function loadCategories() {
-    try {
-      const response = await fetch("/api/categories", { cache: "no-store" });
-      const result = (await response.json()) as CategoriesResponse;
-
-      if (!response.ok) {
-        throw new Error(result.message ?? "Unable to fetch categories.");
-      }
-
-      setCategories(result.categories ?? []);
-      setCategoryError("");
-    } catch (loadError) {
-      setCategoryError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Unable to fetch categories.",
-      );
-    }
-  }
-
-  useEffect(() => {
-    async function loadInitialData() {
-      await Promise.all([loadProducts(), loadCategories()]);
-    }
-
-    void loadInitialData();
-  }, []);
-
   async function createProduct(data: CreateProductInput) {
-    setRequestState(initialProductRequestState);
+    setRequestState(initialProductActionState);
 
     try {
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      const result = (await response.json()) as { message?: string };
+      const result = await createProductAction(data);
+      setRequestState(result);
 
-      setRequestState({
-        ok: response.ok,
-        message: result.message ?? "Product request completed.",
-      });
-
-      if (response.ok) {
+      if (result.ok) {
         clearProductForm();
-        await loadProducts();
       }
     } catch {
       setRequestState({
         ok: false,
-        message: "Unable to connect to products API.",
+        message: "Unable to submit the product.",
       });
     }
   }
@@ -167,16 +100,11 @@ export function ProductPage() {
     setError("");
 
     try {
-      const response = await fetch(`/api/products/${productId}`, {
-        method: "DELETE",
-      });
-      const result = (await response.json()) as { message?: string };
+      const result = await deleteProductAction(productId);
 
-      if (!response.ok) {
-        throw new Error(result.message ?? "Unable to delete product.");
+      if (!result.ok) {
+        throw new Error(result.message);
       }
-
-      await loadProducts();
     } catch (deleteError) {
       setError(
         deleteError instanceof Error
@@ -191,7 +119,7 @@ export function ProductPage() {
   function editProduct(product: ProductRow) {
     setEditingProductId(product.id);
     setIsFormOpen(true);
-    setRequestState(initialProductRequestState);
+    setRequestState(initialProductActionState);
     reset({
       name: product.name,
       sku: product.sku,
@@ -210,7 +138,7 @@ export function ProductPage() {
   }
 
   function cancelEdit() {
-    setRequestState(initialProductRequestState);
+    setRequestState(initialProductActionState);
     clearProductForm();
     setIsFormOpen(false);
   }
@@ -220,32 +148,20 @@ export function ProductPage() {
       return;
     }
 
-    setRequestState(initialProductRequestState);
+    setRequestState(initialProductActionState);
 
     try {
-      const response = await fetch(`/api/products/${editingProductId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      const result = (await response.json()) as { message?: string };
+      const result = await updateProductAction(editingProductId, data);
+      setRequestState(result);
 
-      setRequestState({
-        ok: response.ok,
-        message: result.message ?? "Product request completed.",
-      });
-
-      if (response.ok) {
+      if (result.ok) {
         clearProductForm();
         setIsFormOpen(false);
-        await loadProducts();
       }
     } catch {
       setRequestState({
         ok: false,
-        message: "Unable to connect to products API.",
+        message: "Unable to submit the product.",
       });
     }
   }
@@ -258,7 +174,6 @@ export function ProductPage() {
         <ProductForm
           editingProductId={editingProductId}
           categories={categories}
-          categoryError={categoryError}
           errors={errors}
           isSubmitting={isSubmitting}
           onCancel={cancelEdit}
@@ -273,7 +188,6 @@ export function ProductPage() {
       <ProductTable
         deletingId={deletingId}
         error={error}
-        isLoading={isLoading}
         onDeleteProduct={deleteProduct}
         onEditProduct={editProduct}
         products={products}

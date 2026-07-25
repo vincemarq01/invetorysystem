@@ -6,15 +6,14 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/shared/data-table";
 import { SearchField } from "@/components/shared/search-field";
 import { quickFilters } from "@/lib/constants";
+import type { ProductRow } from "@/lib/products/types";
 import { formatCurrency } from "@/lib/utils";
-import type { ProductRow } from "./product-types";
 
 type ProductFilter = (typeof quickFilters)[number];
 
 type ProductTableProps = {
   deletingId: string | null;
   error: string;
-  isLoading: boolean;
   onDeleteProduct: (productId: string) => void;
   onEditProduct: (product: ProductRow) => void;
   products: ProductRow[];
@@ -35,7 +34,6 @@ function getProductStatus(product: ProductRow) {
 export function ProductTable({
   deletingId,
   error,
-  isLoading,
   onDeleteProduct,
   onEditProduct,
   products,
@@ -113,14 +111,8 @@ export function ProductTable({
             "Status",
             "",
           ]}
-          emptyLabel={
-            isLoading
-              ? "Loading products..."
-              : normalizedSearchQuery || activeFilter !== "All"
-                ? "No products match your search."
-                : "No products found."
-          }
-          rows={filteredProducts.map((product) => {
+          emptyLabel="No products found."
+          rows={products.map((product) => {
             const status = getProductStatus(product);
 
             return [
